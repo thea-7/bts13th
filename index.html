@@ -1208,6 +1208,9 @@
     <div id="ambientGlow"></div>
     <div id="ambientGlow2"></div>
 
+    <!-- ===== BILIBILI PLAYER (hidden) ===== -->
+    <iframe id="biliPlayer" style="position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0;border:none;pointer-events:none;" src="about:blank" allow="autoplay"></iframe>
+
     <!-- ===== MUSIC BAR ===== -->
     <div class="music-bar" id="musicBar">
         <span class="indicator paused" id="musicIndicator"></span>
@@ -1215,8 +1218,6 @@
         <span class="song-name" id="currentSongLabel">—</span>
         <button class="music-toggle" id="musicToggle" title="Toggle music">♪</button>
     </div>
-
-
 
     <!-- ===== APP ===== -->
     <div id="app">
@@ -1617,7 +1618,7 @@
 
                     <div class="stage-card">
                         <div class="stage-thumb" onclick="window.open('https://www.bilibili.com/video/BV1h4ZHB4E5b?t=0.8','_blank')">
-                            <img src="images/stage-blackswan.png" alt="Black Swan 2020" loading="lazy" />
+                            <img src="images/stage-blackswan.jpg" alt="Black Swan 2020" loading="lazy" />
                             <div class="play-overlay">
                                 <div class="play-icon">▶</div>
                             </div>
@@ -1946,39 +1947,35 @@
             }
         }
 
-        /* ========== MUSIC SYSTEM ========== */
+        /* ========== MUSIC SYSTEM (mobile-friendly) ========== */
         const indicator = document.getElementById('musicIndicator');
         const statusLabel = document.getElementById('musicStatusLabel');
         const songLabel = document.getElementById('currentSongLabel');
         const musicToggle = document.getElementById('musicToggle');
         const musicBar = document.getElementById('musicBar');
-        let playerCreated = false;
-        let isPaused = false;
+        const player = document.getElementById('biliPlayer');
+        const BILI_URL = 'https://player.bilibili.com/player.html?bvid=BV1dx411Y7mx&autoplay=1';
+        const BILI_STOP = 'about:blank';
+        let isPlaying = false;
 
         function togglePlay() {
-            if (!playerCreated) {
-                const p = document.createElement('iframe');
-                p.id = 'biliPlayer';
-                p.style.cssText = 'position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0;border:none;';
-                p.src = 'https://player.bilibili.com/player.html?bvid=BV1dx411Y7mx&autoplay=1';
-                p.allow = 'autoplay';
-                document.body.appendChild(p);
-                playerCreated = true;
-                isPaused = false;
+            if (!isPlaying) {
+                // Start music — change src to Bilibili with autoplay=1
+                // This works on mobile because it's triggered by a user gesture (click/tap)
+                player.src = BILI_URL;
+                isPlaying = true;
                 songLabel.textContent = 'Butterfly';
                 statusLabel.textContent = 'Playing';
                 indicator.className = 'indicator';
                 musicToggle.textContent = '♫';
-                return;
+            } else {
+                // Stop music — revert to about:blank
+                player.src = BILI_STOP;
+                isPlaying = false;
+                statusLabel.textContent = 'Paused';
+                indicator.className = 'indicator paused';
+                musicToggle.textContent = '▶';
             }
-
-            const p = document.getElementById('biliPlayer');
-            if (!p || !p.contentWindow) return;
-            isPaused = !isPaused;
-            p.contentWindow.postMessage({type: isPaused ? 'pause' : 'play'}, '*');
-            indicator.className = isPaused ? 'indicator paused' : 'indicator';
-            statusLabel.textContent = isPaused ? 'Paused' : 'Playing';
-            musicToggle.textContent = isPaused ? '▶' : '♫';
         }
 
         musicBar.addEventListener('click', (e) => {
@@ -1991,13 +1988,11 @@
         });
 
         songLabel.textContent = 'Butterfly';
-        statusLabel.textContent = '▶ Click to Play';
+        statusLabel.textContent = 'Click to Play';
         indicator.className = 'indicator paused';
         musicToggle.textContent = '♫';
 
-        console.log('💜 BTS 13th Anniversary — Borahae! 💜');
-        console.log('📌 Music: 在 SONG_CONFIG 中替换 YouTube video ID 即可播放对应歌曲');
-        console.log('📌 也可直接嵌入 Bilibili 视频，详见代码注释');
+        console.log('BTS 13th Anniversary - Borahae!');
     </script>
 
 </body>
