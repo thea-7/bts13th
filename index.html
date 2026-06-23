@@ -1944,91 +1944,47 @@
             }
         }
 
-        /* ========== MUSIC SYSTEM (HTML5 Audio + Bilibili proxy) ========== */
+        /* ========== MUSIC SYSTEM (local audio file — works on all devices) ========== */
         const indicator = document.getElementById('musicIndicator');
         const statusLabel = document.getElementById('musicStatusLabel');
         const songLabel = document.getElementById('currentSongLabel');
         const musicToggle = document.getElementById('musicToggle');
         const musicBar = document.getElementById('musicBar');
-        let audioEl = null;
-        let isPlaying = false;
-        let cachedUrl = null;
-        let isLoading = false;
         const SONG_NAME = 'Butterfly';
-        const BVID = 'BV1dx411Y7mx';
-        const PROXY = 'https://api.allorigins.win/raw?url=';
+        const AUDIO_SRC = 'butterfly.mp3';
+        let isPlaying = false;
 
-        async function getBilibiliAudioUrl() {
-            // Step 1: get video info (cid)
-            const vUrl = PROXY + encodeURIComponent('https://api.bilibili.com/x/web-interface/view?bvid=' + BVID);
-            const vResp = await fetch(vUrl);
-            const vData = await vResp.json();
-            const cid = vData.data.cid;
+        // Pre-create audio element — user gesture (click) triggers play()
+        const audioEl = new Audio(AUDIO_SRC);
+        audioEl.preload = 'auto';
+        audioEl.loop = false;
 
-            // Step 2: get play URL (CDN audio stream)
-            const pUrl = PROXY + encodeURIComponent(
-                'https://api.bilibili.com/x/player/playurl?bvid=' + BVID +
-                '&cid=' + cid + '&qn=16&platform=html5&high_quality=0'
-            );
-            const pResp = await fetch(pUrl);
-            const pData = await pResp.json();
-            return pData.data.durl[0].url;
-        }
+        audioEl.addEventListener('ended', () => {
+            isPlaying = false;
+            statusLabel.textContent = 'Finished';
+            indicator.className = 'indicator paused';
+        });
 
-        async function togglePlay() {
-            if (isLoading) return;
+        audioEl.addEventListener('error', () => {
+            statusLabel.textContent = 'Error';
+            indicator.className = 'indicator paused';
+        });
 
-            if (!audioEl || !cachedUrl) {
-                // First play — fetch audio URL via proxy
-                isLoading = true;
-                statusLabel.textContent = 'Loading...';
-                try {
-                    cachedUrl = await getBilibiliAudioUrl();
-                    audioEl = new Audio(cachedUrl);
-                    audioEl.addEventListener('ended', () => {
-                        isPlaying = false;
-                        statusLabel.textContent = 'Finished';
-                        indicator.className = 'indicator paused';
-                    });
-                    audioEl.addEventListener('error', () => {
-                        statusLabel.textContent = 'Error';
-                        indicator.className = 'indicator paused';
-                        isPlaying = false;
-                        isLoading = false;
-                    });
-                    await audioEl.play();
-                    isPlaying = true;
-                    songLabel.textContent = SONG_NAME;
-                    statusLabel.textContent = 'Playing';
-                    indicator.className = 'indicator';
-                } catch (e) {
-                    statusLabel.textContent = 'Failed';
-                    indicator.className = 'indicator paused';
-                    cachedUrl = null;
-                    audioEl = null;
-                }
-                isLoading = false;
-                return;
-            }
-
-            // Toggle play/pause
+        function togglePlay() {
             if (isPlaying) {
                 audioEl.pause();
                 isPlaying = false;
                 statusLabel.textContent = 'Paused';
                 indicator.className = 'indicator paused';
             } else {
-                try {
-                    await audioEl.play();
+                audioEl.play().then(() => {
                     isPlaying = true;
                     statusLabel.textContent = 'Playing';
                     indicator.className = 'indicator';
-                } catch (e) {
-                    // Audio context expired — reload
-                    cachedUrl = null;
-                    audioEl = null;
-                    togglePlay();
-                }
+                }).catch(() => {
+                    statusLabel.textContent = 'Error';
+                    indicator.className = 'indicator paused';
+                });
             }
         }
 
